@@ -39,6 +39,42 @@ def init_db() -> None:
         con.execute(_INIT_SQL)
 
 
+def get_sales(
+    marketplace: str | None = None,
+    status: str | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> tuple[list[dict], int]:
+    sql_conditions: list[str] = []
+    sql_params: list = []
+
+    if marketplace:
+        sql_conditions.append("marketplace = ?")
+        sql_params.append(marketplace)
+    if status:
+        sql_conditions.append("status = ?")
+        sql_params.append(status)
+    if date_from:
+        sql_conditions.append("sold_at >= ?")
+        sql_params.append(date_from)
+    if date_to:
+        sql_conditions.append("sold_at <= ?")
+        sql_params.append(date_to)
+
+    sql_where = f"WHERE {' AND '.join(sql_conditions)}" if sql_conditions else ""
+
+    with _conn() as con:
+        total = con.execute(f"SELECT COUNT(*) FROM sales {sql_where}", sql_params).fetchone()[0]
+        rows = con.execute(
+            f"SELECT * FROM sales {sql_where} ORDER BY id LIMIT ? OFFSET ?",
+            sql_params + [page_size, (page - 1) * page_size],
+        ).fetchall()
+
+    return [dict(row) for row in rows], total
+
+
 def add_sales(sales: list[Sale]) -> int:
     rows = [
         (
