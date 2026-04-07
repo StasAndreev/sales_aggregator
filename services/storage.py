@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS sales (
     price       TEXT    NOT NULL,
     cost_price  TEXT    NOT NULL,
     status      TEXT    NOT NULL,
-    sold_at     TEXT    NOT NULL
+    sold_at     TEXT    NOT NULL,
+    UNIQUE (order_id, marketplace)
 )
 """
 
