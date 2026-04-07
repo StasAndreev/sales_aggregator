@@ -4,6 +4,13 @@ from main import app
 
 client = TestClient(app)
 
+
+def get(params: dict = {}) -> tuple[int, dict]:
+    r = client.get("/sales", params=params)
+    body = r.json()
+    print(f"\nStatus: {r.status_code}  Body: {body}")
+    return r.status_code, body
+
 VALID_SALE = {
     "order_id": "ORD-001",
     "marketplace": "ozon",
@@ -95,8 +102,6 @@ def test_wrong_field_name():
     assert body["added"] == 0
     assert any("price" in f for f in failed_fields(body))
 
-
-
 def test_wrong_marketplace_and_sold_at_future():
     sale = {**VALID_SALE, "marketplace": "amazon", "sold_at": "2099-01-01"}
     status, body = post([VALID_SALE, sale])
@@ -122,3 +127,10 @@ def test_duplicate():
     assert status == 200
     assert body["added"] == 1
     assert body["failed"] == []
+
+
+def test_post_then_get():
+    status, body = post([VALID_SALE])
+    status, body = get()
+    assert status == 200
+    assert body["items"][0] == VALID_SALE

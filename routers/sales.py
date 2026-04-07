@@ -1,8 +1,9 @@
 from datetime import date
+from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ValidationError, field_serializer
 
 from models.sale import Marketplace, Sale, SaleStatus
 from services import storage
@@ -25,10 +26,14 @@ class SaleItem(BaseModel):
     marketplace: str
     product_name: str
     quantity: int
-    price: str
-    cost_price: str
+    price: Decimal
+    cost_price: Decimal
     status: str
     sold_at: str
+
+    @field_serializer("price", "cost_price")
+    def serialize_decimal(self, v: Decimal) -> float:
+        return float(v)
 
 
 class SalesListResponse(BaseModel):
