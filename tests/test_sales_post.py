@@ -116,3 +116,9 @@ def test_batch_one_valid_one_invalid():
     assert len(body["failed"]) == 1
     assert body["failed"][0]["index"] == 1
     assert any("marketplace" in f for f in failed_fields(body))
+
+def test_duplicate():
+    status, body = post([VALID_SALE, VALID_SALE])
+    assert status == 200
+    assert body["added"] == 1
+    assert body["failed"] == []

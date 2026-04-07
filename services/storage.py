@@ -54,9 +54,9 @@ def add_sales(sales: list[Sale]) -> int:
         for s in sales
     ]
     with _conn() as con:
-        con.executemany(
-            "INSERT INTO sales (order_id, marketplace, product_name, quantity, price, cost_price, status, sold_at) "
+        cur = con.executemany(
+            "INSERT OR IGNORE INTO sales (order_id, marketplace, product_name, quantity, price, cost_price, status, sold_at) "
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             rows,
         )
-    return len(rows)
+    return cur.rowcount

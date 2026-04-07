@@ -39,7 +39,6 @@ def create_sales(items: list[Any]) -> AddSalesResponse:
                 ],
             ))
 
-    if valid:
-        storage.add_sales(valid)
+    added = storage.add_sales(valid) if valid else 0
 
-    return AddSalesResponse(added=len(valid), failed=failed)
+    return AddSalesResponse(added=added, failed=failed)
