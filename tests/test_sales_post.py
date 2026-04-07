@@ -27,6 +27,11 @@ def failed_fields(body: dict) -> list[str]:
     return [err["field"] for item in body["failed"] for err in item["errors"]]
 
 
+def test_empty():
+    status, body = post([])
+    assert status == 422
+
+
 def test_all_valid():
     status, body = post([VALID_SALE])
     assert status == 200
