@@ -26,7 +26,7 @@ def _conn():
     try:
         yield con
         con.commit()
-    except:
+    except Exception:
         con.rollback()
         raise
     finally:
