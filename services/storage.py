@@ -90,7 +90,7 @@ def get_raw_sales(
 
     with _conn() as con:
         rows = con.execute(
-            f"SELECT order_id, marketplace, quantity, price, cost_price, status, sold_at FROM sales {sql_where}",
+            f"SELECT order_id, marketplace, product_name, quantity, price, cost_price, status, sold_at FROM sales {sql_where}",
             sql_params,
         ).fetchall()
 

@@ -2,6 +2,8 @@ import pandas as pd
 
 from services import storage
 
+_SORT_BY_COLUMN = {"revenue": "revenue", "quantity": "quantity", "profit": "profit"}
+
 _GROUP_BY_COLUMN = {"marketplace": "marketplace", "date": "sold_at", "status": "status"}
 
 _EMPTY_METRICS = {
@@ -58,4 +60,46 @@ def get_summary(
     return [
         {"group": str(key), **_compute_metrics(group_df)}
         for key, group_df in df.groupby(col)
+    ]
+
+
+def get_top_products(
+    iso_date_from: str,
+    iso_date_to: str,
+    sort_by: str = "revenue",
+    limit: int = 10,
+) -> list[dict]:
+    rows = storage.get_raw_sales(iso_date_from=iso_date_from, iso_date_to=iso_date_to)
+
+    if not rows:
+        return []
+
+    df = pd.DataFrame(rows)
+    delivered = df[df["status"] == "delivered"].copy()
+
+    if delivered.empty:
+        return []
+
+    delivered["price"] = delivered["price"].astype(float)
+    delivered["cost_price"] = delivered["cost_price"].astype(float)
+    delivered["revenue"] = delivered["price"] * delivered["quantity"]
+    delivered["cost"] = delivered["cost_price"] * delivered["quantity"]
+
+    grouped = delivered.groupby("product_name").agg(
+        revenue=("revenue", "sum"),
+        quantity=("quantity", "sum"),
+        cost=("cost", "sum"),
+    )
+    grouped["profit"] = grouped["revenue"] - grouped["cost"]
+
+    top = grouped.nlargest(limit, sort_by).reset_index()
+
+    return [
+        {
+            "product_name": row["product_name"],
+            "revenue": round(float(row["revenue"]), 2),
+            "quantity": int(row["quantity"]),
+            "profit": round(float(row["profit"]), 2),
+        }
+        for _, row in top.iterrows()
     ]

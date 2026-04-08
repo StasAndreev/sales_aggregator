@@ -1,9 +1,9 @@
 from datetime import date
 from typing import Literal
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Query
 
-from models.analytics import GroupedMetricsResponse
+from models.analytics import GroupedMetricsResponse, TopProductResponse
 from models.sales import Marketplace
 from services import analytics
 
@@ -24,3 +24,19 @@ def get_summary(
         group_by=group_by,
     )
     return [GroupedMetricsResponse(**row) for row in results]
+
+
+@router.get("/top-products", response_model=list[TopProductResponse])
+def get_top_products(
+    date_from: date,
+    date_to: date,
+    sort_by: Literal["revenue", "quantity", "profit"] = "revenue",
+    limit: int = Query(default=10, ge=1),
+) -> list[TopProductResponse]:
+    results = analytics.get_top_products(
+        iso_date_from=date_from.isoformat(),
+        iso_date_to=date_to.isoformat(),
+        sort_by=sort_by,
+        limit=limit,
+    )
+    return [TopProductResponse(**row) for row in results]
