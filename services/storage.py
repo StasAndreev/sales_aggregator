@@ -42,8 +42,8 @@ def init_db() -> None:
 def get_sales(
     marketplace: str | None = None,
     status: str | None = None,
-    date_from: str | None = None,
-    date_to: str | None = None,
+    iso_date_from: str | None = None,
+    iso_date_to: str | None = None,
     page: int = 1,
     page_size: int = 20,
 ) -> tuple[list[dict], int]:
@@ -56,12 +56,12 @@ def get_sales(
     if status:
         sql_conditions.append("status = ?")
         sql_params.append(status)
-    if date_from:
+    if iso_date_from:
         sql_conditions.append("sold_at >= ?")
-        sql_params.append(date_from)
-    if date_to:
+        sql_params.append(iso_date_from)
+    if iso_date_to:
         sql_conditions.append("sold_at <= ?")
-        sql_params.append(date_to)
+        sql_params.append(iso_date_to)
 
     sql_where = f"WHERE {' AND '.join(sql_conditions)}" if sql_conditions else ""
 

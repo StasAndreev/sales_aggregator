@@ -23,8 +23,8 @@ def list_sales(
     items, total = storage.get_sales(
         marketplace=marketplace.value if marketplace else None,
         status=status.value if status else None,
-        date_from=date_from.isoformat() if date_from else None,
-        date_to=date_to.isoformat() if date_to else None,
+        iso_date_from=date_from.isoformat() if date_from else None,
+        iso_date_to=date_to.isoformat() if date_to else None,
         page=page,
         page_size=page_size,
     )
