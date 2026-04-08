@@ -87,8 +87,8 @@ class SaleResponse(BaseModel):
     marketplace: str
     product_name: str
     quantity: int
-    price: float
-    cost_price: float
+    price: Decimal
+    cost_price: Decimal
     status: str
     sold_at: str
 
