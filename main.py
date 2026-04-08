@@ -19,7 +19,16 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down")
 
 
-app = FastAPI(title="Sales Aggregator", lifespan=lifespan)
+app = FastAPI(
+    title="Sales Aggregator",
+    description=(
+        "Aggregates marketplace sales data from Ozon, Wildberries, and Yandex Market. "
+        "Supports batch ingestion via JSON or CSV upload, pagination, filtering, "
+        "and analytics with optional USD conversion."
+    ),
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
 app.include_router(sales.router)
 app.include_router(analytics.router)

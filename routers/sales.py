@@ -1,10 +1,10 @@
 import io
 import logging
 from datetime import date
-from typing import Any
+from typing import Annotated, Any
 
 import pandas as pd
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Body, File, HTTPException, Query, UploadFile
 from pydantic import ValidationError
 
 from models.sales import AddSalesResponse, CsvRowError, FailedItem, Marketplace, Sale, SaleStatus, SalesListResponse, UploadCsvResponse
@@ -15,15 +15,18 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sales", tags=["sales"])
 
 
-@router.get("", response_model=SalesListResponse)
+@router.get("", response_model=SalesListResponse, summary="List sales")
 def list_sales(
-    marketplace: Marketplace | None = None,
-    status: SaleStatus | None = None,
-    date_from: date | None = None,
-    date_to: date | None = None,
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=20, ge=1),
+    marketplace: Marketplace | None = Query(default=None, description="Filter by marketplace"),
+    status: SaleStatus | None = Query(default=None, description="Filter by order status"),
+    date_from: date | None = Query(default=None, description="Start date inclusive (YYYY-MM-DD)"),
+    date_to: date | None = Query(default=None, description="End date inclusive (YYYY-MM-DD)"),
+    page: int = Query(default=1, ge=1, description="Page number (1-based)"),
+    page_size: int = Query(default=20, ge=1, description="Results per page"),
 ) -> SalesListResponse:
+    """
+    Return a paginated list of sales records. All filters are optional and combinable.
+    """
     items, total = storage.get_sales(
         marketplace=marketplace.value if marketplace else None,
         status=status.value if status else None,
@@ -35,8 +38,42 @@ def list_sales(
     return SalesListResponse(items=items, total=total)
 
 
-@router.post("", response_model=AddSalesResponse)
-def create_sales(items: list[Any]) -> AddSalesResponse:
+_SALE_EXAMPLE = {
+    "order_id": "ORD-001",
+    "marketplace": "ozon",
+    "product_name": "Кабель USB-C",
+    "quantity": 3,
+    "price": 450.00,
+    "cost_price": 120.00,
+    "status": "delivered",
+    "sold_at": "2025-03-01",
+}
+
+
+@router.post("", response_model=AddSalesResponse, summary="Create sales")
+def create_sales(
+    items: Annotated[list[Any], Body(
+        openapi_examples={
+            "single": {
+                "summary": "Single valid sale",
+                "value": [_SALE_EXAMPLE],
+            },
+            "batch_with_error": {
+                "summary": "Batch — one valid, one with invalid marketplace",
+                "value": [
+                    _SALE_EXAMPLE,
+                    {**_SALE_EXAMPLE, "order_id": "ORD-002", "marketplace": "amazon"},
+                ],
+            },
+        }
+    )],
+) -> AddSalesResponse:
+    """
+    Submit one or more sales records in a single request.
+
+    Valid items are inserted; invalid items are returned in `failed` with field-level error messages.
+    Duplicate `(order_id, marketplace)` pairs are silently ignored and not counted in `added`.
+    """
     if not items:
         raise HTTPException(status_code=422, detail="Request body must contain at least one sale")
 
@@ -67,8 +104,17 @@ _MAX_CSV_SIZE = 10 * 1024 * 1024
 _REQUIRED_COLUMNS = {"order_id", "marketplace", "product_name", "quantity", "price", "cost_price", "status", "sold_at"}
 
 
-@router.post("/upload-csv", response_model=UploadCsvResponse)
-def upload_csv(file: UploadFile = File(...)) -> UploadCsvResponse:
+@router.post("/upload-csv", response_model=UploadCsvResponse, summary="Upload sales CSV")
+def upload_csv(
+    file: UploadFile = File(..., description="CSV file with columns: order_id, marketplace, product_name, quantity, price, cost_price, status, sold_at"),
+) -> UploadCsvResponse:
+    """
+    Upload a CSV file containing sales records.
+
+    Valid rows are inserted; invalid rows are collected in `errors` with the CSV line number and
+    field-level messages. Duplicate `(order_id, marketplace)` pairs are silently ignored.
+    Maximum file size: 10 MB.
+    """
     contents = file.file.read()
     logger.info("CSV upload: filename=%r size=%d bytes", file.filename, len(contents))
     if len(contents) > _MAX_CSV_SIZE:
