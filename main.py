@@ -1,15 +1,22 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from core.logging_config import configure_logging
 from routers import analytics, sales
 from services.storage import init_db
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    configure_logging()
+    logger.info("Starting up")
     init_db()
     yield
+    logger.info("Shutting down")
 
 
 app = FastAPI(title="Sales Aggregator", lifespan=lifespan)

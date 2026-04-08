@@ -1,3 +1,4 @@
+import logging
 from datetime import date
 from typing import Literal
 
@@ -7,6 +8,8 @@ from models.analytics import GroupedMetricsResponse, TopProductResponse
 from models.sales import Marketplace
 from services import analytics
 from services.currency import CurrencyUnavailableError, get_usd_rate
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/analytics", tags=["analytics"])
 
@@ -39,6 +42,7 @@ def get_summary_usd(
     try:
         rate = get_usd_rate()
     except CurrencyUnavailableError as exc:
+        logger.warning("USD rate unavailable: %s", exc)
         raise HTTPException(status_code=503, detail=str(exc))
 
     results = analytics.get_summary(

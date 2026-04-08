@@ -1,4 +1,5 @@
 import io
+import logging
 from datetime import date
 from typing import Any
 
@@ -8,6 +9,8 @@ from pydantic import ValidationError
 
 from models.sales import AddSalesResponse, CsvRowError, FailedItem, Marketplace, Sale, SaleStatus, SalesListResponse, UploadCsvResponse
 from services import storage
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/sales", tags=["sales"])
 
@@ -52,6 +55,9 @@ def create_sales(items: list[Any]) -> AddSalesResponse:
                 ],
             ))
 
+    if failed:
+        logger.warning("POST /sales: %d/%d items failed validation", len(failed), len(items))
+
     added = storage.add_sales(valid)
 
     return AddSalesResponse(added=added, failed=failed)
@@ -64,15 +70,19 @@ _REQUIRED_COLUMNS = {"order_id", "marketplace", "product_name", "quantity", "pri
 @router.post("/upload-csv", response_model=UploadCsvResponse)
 def upload_csv(file: UploadFile = File(...)) -> UploadCsvResponse:
     contents = file.file.read()
+    logger.info("CSV upload: filename=%r size=%d bytes", file.filename, len(contents))
     if len(contents) > _MAX_CSV_SIZE:
+        logger.warning("CSV upload rejected: size %d exceeds %d byte limit", len(contents), _MAX_CSV_SIZE)
         raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
     try:
         df = pd.read_csv(io.BytesIO(contents), dtype=str, keep_default_na=False)
     except Exception as e:
+        logger.warning("CSV parse failed: %s", e)
         raise HTTPException(status_code=422, detail=f"Failed to read CSV file: {e}")
 
     missing = _REQUIRED_COLUMNS - set(df.columns)
     if missing:
+        logger.warning("CSV missing required columns: %s", sorted(missing))
         raise HTTPException(status_code=422, detail=f"Missing required columns: {sorted(missing)}")
 
     valid: list[Sale] = []
@@ -91,5 +101,9 @@ def upload_csv(file: UploadFile = File(...)) -> UploadCsvResponse:
                 ],
             ))
 
+    if errors:
+        logger.warning("CSV upload: %d rows failed validation", len(errors))
+
     added = storage.add_sales(valid)
+    logger.info("CSV upload complete: inserted %d, errors %d", added, len(errors))
     return UploadCsvResponse(uploaded=added, errors_count=len(errors), errors=errors)

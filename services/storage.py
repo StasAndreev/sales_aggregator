@@ -1,7 +1,10 @@
+import logging
 import sqlite3
 from contextlib import contextmanager
 from decimal import Decimal
 from models.sales import Sale
+
+logger = logging.getLogger(__name__)
 
 DB_PATH = "sales.db"
 
@@ -37,8 +40,10 @@ def _conn():
 
 
 def init_db() -> None:
+    logger.info("Initialising database at %s", DB_PATH)
     with _conn() as con:
         con.executescript(_INIT_SQL)
+    logger.info("Database ready")
 
 
 def get_sales(
@@ -105,6 +110,7 @@ def get_raw_sales(
 
 
 def add_sales(sales: list[Sale]) -> int:
+    logger.debug("Inserting %d sale rows", len(sales))
     rows = [
         (
             s.order_id,
@@ -124,4 +130,5 @@ def add_sales(sales: list[Sale]) -> int:
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
             rows,
         )
+    logger.info("Inserted %d/%d rows (duplicates ignored)", cur.rowcount, len(rows))
     return cur.rowcount
