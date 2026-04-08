@@ -2,11 +2,20 @@ import pandas as pd
 
 from services import storage
 
-_GROUP_BY_COLUMN = {"marketplace": "marketplace", "date": "sold_at", "status": "status"}
+_GROUP_BY_COLUMN = {
+    "marketplace": "marketplace",
+    "date": "sold_at",
+    "status": "status"
+}
 
 _EMPTY_METRICS = {
-    "total_revenue": 0.0, "total_cost": 0.0, "gross_profit": 0.0,
-    "margin_percent": 0.0, "total_orders": 0, "avg_order_value": 0.0, "return_rate": 0.0,
+    "total_revenue": 0.0,
+    "total_cost": 0.0,
+    "gross_profit": 0.0,
+    "margin_percent": 0.0,
+    "total_orders": 0, 
+    "avg_order_value": 0.0,
+    "return_rate": 0.0,
 }
 
 
