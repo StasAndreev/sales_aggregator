@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from routers import sales
+from routers import analytics, sales
 from services.storage import init_db
 
 
@@ -15,3 +15,4 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Sales Aggregator", lifespan=lifespan)
 
 app.include_router(sales.router)
+app.include_router(analytics.router)

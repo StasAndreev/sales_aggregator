@@ -1,5 +1,6 @@
 import sqlite3
 from contextlib import contextmanager
+from decimal import Decimal
 from models.sales import Sale
 
 DB_PATH = "sales.db"
@@ -73,6 +74,33 @@ def get_sales(
         ).fetchall()
 
     return [dict(row) for row in rows], total
+
+
+def get_raw_sales(
+    iso_date_from: str,
+    iso_date_to: str,
+    marketplace: str | None = None,
+) -> list[dict]:
+    sql_where = "WHERE sold_at >= ? AND sold_at <= ?"
+    sql_params: list = [iso_date_from, iso_date_to]
+
+    if marketplace:
+        sql_where += " AND marketplace = ?"
+        sql_params.append(marketplace)
+
+    with _conn() as con:
+        rows = con.execute(
+            f"SELECT order_id, marketplace, quantity, price, cost_price, status, sold_at FROM sales {sql_where}",
+            sql_params,
+        ).fetchall()
+
+    result = []
+    for row in rows:
+        d = dict(row)
+        d["price"] = Decimal(str(d["price"]))
+        d["cost_price"] = Decimal(str(d["cost_price"]))
+        result.append(d)
+    return result
 
 
 def add_sales(sales: list[Sale]) -> int:
