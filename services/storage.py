@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS sales (
     status       TEXT    NOT NULL,
     sold_at      TEXT    NOT NULL,
     UNIQUE (order_id, marketplace)
-)
+);
+CREATE INDEX IF NOT EXISTS idx_sales_sold_at ON sales(sold_at);
 """
 
 
@@ -37,7 +38,7 @@ def _conn():
 
 def init_db() -> None:
     with _conn() as con:
-        con.execute(_INIT_SQL)
+        con.executescript(_INIT_SQL)
 
 
 def get_sales(

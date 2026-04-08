@@ -2,8 +2,6 @@ import pandas as pd
 
 from services import storage
 
-_SORT_BY_COLUMN = {"revenue": "revenue", "quantity": "quantity", "profit": "profit"}
-
 _GROUP_BY_COLUMN = {"marketplace": "marketplace", "date": "sold_at", "status": "status"}
 
 _EMPTY_METRICS = {
