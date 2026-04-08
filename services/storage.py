@@ -6,15 +6,15 @@ DB_PATH = "sales.db"
 
 _INIT_SQL = """
 CREATE TABLE IF NOT EXISTS sales (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id    TEXT    NOT NULL,
-    marketplace TEXT    NOT NULL,
-    product_name TEXT   NOT NULL,
-    quantity    INTEGER NOT NULL,
-    price       TEXT    NOT NULL,
-    cost_price  TEXT    NOT NULL,
-    status      TEXT    NOT NULL,
-    sold_at     TEXT    NOT NULL,
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id     TEXT    NOT NULL,
+    marketplace  TEXT    NOT NULL,
+    product_name TEXT    NOT NULL,
+    quantity     INTEGER NOT NULL,
+    price        REAL    NOT NULL,
+    cost_price   REAL    NOT NULL,
+    status       TEXT    NOT NULL,
+    sold_at      TEXT    NOT NULL,
     UNIQUE (order_id, marketplace)
 )
 """
@@ -82,8 +82,8 @@ def add_sales(sales: list[Sale]) -> int:
             s.marketplace.value,
             s.product_name,
             s.quantity,
-            str(s.price),
-            str(s.cost_price),
+            float(s.price),
+            float(s.cost_price),
             s.status.value,
             s.sold_at.isoformat(),
         )
