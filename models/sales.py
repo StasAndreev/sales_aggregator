@@ -39,6 +39,17 @@ class FailedItem(BaseModel):
     errors: list[dict]
 
 
+class CsvRowError(BaseModel):
+    row: int
+    errors: list[dict]
+
+
+class UploadCsvResponse(BaseModel):
+    uploaded: int
+    errors_count: int
+    errors: list[CsvRowError]
+
+
 class AddSalesResponse(BaseModel):
     added: int
     failed: list[FailedItem]

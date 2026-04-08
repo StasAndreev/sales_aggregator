@@ -1,11 +1,12 @@
+import io
 from datetime import date
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+import pandas as pd
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from pydantic import ValidationError
 
-from models.sales import Marketplace, Sale, SaleStatus
-from models.sales import AddSalesResponse, FailedItem, SalesListResponse
+from models.sales import AddSalesResponse, CsvRowError, FailedItem, Marketplace, Sale, SaleStatus, SalesListResponse, UploadCsvResponse
 from services import storage
 
 router = APIRouter(prefix="/sales", tags=["sales"])
@@ -54,3 +55,41 @@ def create_sales(items: list[Any]) -> AddSalesResponse:
     added = storage.add_sales(valid)
 
     return AddSalesResponse(added=added, failed=failed)
+
+
+_MAX_CSV_SIZE = 10 * 1024 * 1024
+_REQUIRED_COLUMNS = {"order_id", "marketplace", "product_name", "quantity", "price", "cost_price", "status", "sold_at"}
+
+
+@router.post("/upload-csv", response_model=UploadCsvResponse)
+def upload_csv(file: UploadFile = File(...)) -> UploadCsvResponse:
+    contents = file.file.read()
+    if len(contents) > _MAX_CSV_SIZE:
+        raise HTTPException(status_code=413, detail="File too large (max 10 MB)")
+    try:
+        df = pd.read_csv(io.BytesIO(contents), dtype=str, keep_default_na=False)
+    except Exception as e:
+        raise HTTPException(status_code=422, detail=f"Failed to read CSV file: {e}")
+
+    missing = _REQUIRED_COLUMNS - set(df.columns)
+    if missing:
+        raise HTTPException(status_code=422, detail=f"Missing required columns: {sorted(missing)}")
+
+    valid: list[Sale] = []
+    errors: list[CsvRowError] = []
+
+    for idx, row in df.iterrows():
+        row_num = int(idx) + 2
+        try:
+            valid.append(Sale.model_validate(row.to_dict()))
+        except ValidationError as e:
+            errors.append(CsvRowError(
+                row=row_num,
+                errors=[
+                    {"field": ".".join(str(loc) for loc in err["loc"]), "message": err["msg"]}
+                    for err in e.errors()
+                ],
+            ))
+
+    added = storage.add_sales(valid)
+    return UploadCsvResponse(uploaded=added, errors_count=len(errors), errors=errors)
