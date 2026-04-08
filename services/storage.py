@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS sales (
     marketplace  TEXT    NOT NULL,
     product_name TEXT    NOT NULL,
     quantity     INTEGER NOT NULL,
-    price        REAL    NOT NULL,
-    cost_price   REAL    NOT NULL,
+    price        TEXT    NOT NULL,
+    cost_price   TEXT    NOT NULL,
     status       TEXT    NOT NULL,
     sold_at      TEXT    NOT NULL,
     UNIQUE (order_id, marketplace)
@@ -98,8 +98,8 @@ def get_raw_sales(
     result = []
     for row in rows:
         d = dict(row)
-        d["price"] = Decimal(str(d["price"]))
-        d["cost_price"] = Decimal(str(d["cost_price"]))
+        d["price"] = Decimal(d["price"])
+        d["cost_price"] = Decimal(d["cost_price"])
         result.append(d)
     return result
 
@@ -111,8 +111,8 @@ def add_sales(sales: list[Sale]) -> int:
             s.marketplace.value,
             s.product_name,
             s.quantity,
-            float(s.price),
-            float(s.cost_price),
+            str(s.price),
+            str(s.cost_price),
             s.status.value,
             s.sold_at.isoformat(),
         )
