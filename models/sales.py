@@ -32,3 +32,29 @@ class Sale(BaseModel):
         if v > date.today():
             raise ValueError("sold_at cannot be in the future")
         return v
+
+
+class FailedItem(BaseModel):
+    index: int
+    errors: list[dict]
+
+
+class AddSalesResponse(BaseModel):
+    added: int
+    failed: list[FailedItem]
+
+
+class SaleResponse(BaseModel):
+    order_id: str
+    marketplace: str
+    product_name: str
+    quantity: int
+    price: float
+    cost_price: float
+    status: str
+    sold_at: str
+
+
+class SalesListResponse(BaseModel):
+    items: list[SaleResponse]
+    total: int

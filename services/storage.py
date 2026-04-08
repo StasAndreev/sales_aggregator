@@ -1,6 +1,6 @@
 import sqlite3
 from contextlib import contextmanager
-from models.sale import Sale
+from models.sales import Sale
 
 DB_PATH = "sales.db"
 

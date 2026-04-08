@@ -1,44 +1,14 @@
 from datetime import date
-from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
-from pydantic import BaseModel, ValidationError, field_serializer
+from pydantic import ValidationError
 
-from models.sale import Marketplace, Sale, SaleStatus
+from models.sales import Marketplace, Sale, SaleStatus
+from models.sales import AddSalesResponse, FailedItem, SalesListResponse
 from services import storage
 
 router = APIRouter(prefix="/sales", tags=["sales"])
-
-
-class FailedItem(BaseModel):
-    index: int
-    errors: list[dict]
-
-
-class AddSalesResponse(BaseModel):
-    added: int
-    failed: list[FailedItem]
-
-
-class SaleItem(BaseModel):
-    order_id: str
-    marketplace: str
-    product_name: str
-    quantity: int
-    price: Decimal
-    cost_price: Decimal
-    status: str
-    sold_at: str
-
-    @field_serializer("price", "cost_price")
-    def serialize_decimal(self, v: Decimal) -> float:
-        return float(v)
-
-
-class SalesListResponse(BaseModel):
-    items: list[SaleItem]
-    total: int
 
 
 @router.get("", response_model=SalesListResponse)

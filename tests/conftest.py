@@ -2,7 +2,7 @@ import csv
 
 import pytest
 
-from models.sale import Sale
+from models.sales import Sale
 from services import storage
 
 CSV_PATH = "sample_data.csv"
